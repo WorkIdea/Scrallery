@@ -1,0 +1,5 @@
+scrapy==2.11.2
+sqlmodel==0.0.19
+beautifulsoup4==4.12.3
+Pillow==10.3.0
+itemadapter==0.9.0

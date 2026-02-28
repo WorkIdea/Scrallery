@@ -1,0 +1,43 @@
+version: "3.9"
+
+volumes:
+  data:
+
+services:
+
+  # ── Interface web ──────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .           # raiz do projecto — pode aceder a db/ e web/
+      dockerfile: web/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - data:/data         # BD e downloads partilhados
+    environment:
+      DATABASE_URL:   sqlite:////data/crawler.db
+      IMAGES_STORE:   /data/downloads
+      DOWNLOADS_ROOT: /data/downloads
+      PYTHONPATH:     /app
+    restart: unless-stopped
+
+  # ── Crawler Scrapy ─────────────────────────────────────────────────────────
+  # NÃO inicia automaticamente — correr manualmente:
+  #
+  #   podman compose run --rm crawler crawl hqporno
+  #   podman compose run --rm crawler crawl superhq
+  #   podman compose run --rm crawler crawl hqporno -s CLOSESPIDER_PAGECOUNT=10
+  #
+  crawler:
+    build:
+      context: .           # raiz do projecto — pode aceder a db/ e crawler/
+      dockerfile: crawler/Dockerfile
+    volumes:
+      - data:/data         # mesma BD e downloads da web
+    environment:
+      DATABASE_URL:  sqlite:////data/crawler.db
+      IMAGES_STORE:  /data/downloads
+      PYTHONPATH:    /app
+    profiles:
+      - crawler            # nunca sobe com "up" normal
+    restart: "no"

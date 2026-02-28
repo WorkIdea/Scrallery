@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Crawler — {{ cfg.label }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+
+  <div class="flex items-center gap-4 mb-8">
+    <a href="/" class="text-gray-500 hover:text-white">← Dashboard</a>
+    <h1 class="text-2xl font-bold">Crawler Completo — {{ cfg.label }}</h1>
+    <span id="status-badge" class="badge-{{ task.status }}">{{ task.status }}</span>
+  </div>
+
+  <!-- Controles -->
+  <div class="card p-6 mb-6">
+    <h2 class="font-semibold mb-4 text-gray-300">Configuração</h2>
+    <form id="start-form" class="flex flex-wrap items-end gap-4">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Máx. páginas (0 = sem limite)</label>
+        <input name="max_pages" type="number" value="0" min="0"
+               class="w-32 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500"/>
+      </div>
+      <div class="flex items-center gap-2">
+        <input name="resume" type="checkbox" id="resume-cb" class="w-4 h-4 accent-brand-500"/>
+        <label for="resume-cb" class="text-sm text-gray-300">Retomar do checkpoint</label>
+      </div>
+    </form>
+
+    <div class="flex flex-wrap gap-2 mt-4">
+      <button onclick="startCrawl()" class="btn-primary">▶ Iniciar</button>
+      <button onclick="pauseCrawl()" class="btn-ghost">⏸ Pausar</button>
+      <button onclick="resumeCrawl()" class="btn-ghost">▶ Retomar</button>
+      <button onclick="stopCrawl()" class="btn-danger">■ Parar</button>
+    </div>
+  </div>
+
+  <!-- Status — polling a cada 2s via HTMX -->
+  <div id="crawl-status"
+       hx-get="/site/{{ site_key }}/crawl/status"
+       hx-trigger="every 2s"
+       hx-swap="outerHTML">
+    {% include "partials/crawl_status.html" %}
+  </div>
+
+  <!-- Downloads -->
+  {% if task.status == "done" %}
+  <div class="card p-6 mt-6">
+    <h2 class="font-semibold mb-4">Exportar resultados</h2>
+    <div class="flex gap-3">
+      <a href="/download/json/{{ site_key }}" class="btn-ghost">⬇ JSON</a>
+      <a href="/download/csv/{{ site_key }}"  class="btn-ghost">⬇ CSV</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const key = "{{ site_key }}";
+
+  async function post(url) {
+    await fetch(url, {method:"POST"});
+  }
+
+  function startCrawl() {
+    const form     = document.getElementById("start-form");
+    const max_pages = form.querySelector("[name=max_pages]").value;
+    const resume   = form.querySelector("[name=resume]").checked;
+    const body     = new FormData();
+    body.append("max_pages", max_pages);
+    body.append("resume", resume);
+    fetch(`/site/${key}/crawl/start`, {method:"POST", body});
+  }
+
+  function pauseCrawl()  { post(`/site/${key}/crawl/pause`);  }
+  function resumeCrawl() { post(`/site/${key}/crawl/resume`); }
+  function stopCrawl()   { post(`/site/${key}/crawl/stop`);   }
+</script>
+{% endblock %}

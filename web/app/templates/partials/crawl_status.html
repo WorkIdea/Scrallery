@@ -1,0 +1,46 @@
+<div id="crawl-status"
+     hx-get="/site/{{ site_key }}/crawl/status"
+     hx-trigger="{% if task.running %}every 3s{% else %}none{% endif %}"
+     hx-swap="outerHTML"
+     class="space-y-4">
+
+  <div class="card p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+    <div>
+      <div class="text-2xl font-bold text-pink-400">{{ task.pages_crawled }}</div>
+      <div class="text-xs text-gray-400 mt-1">Páginas</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-yellow-400">{{ task.articles_found }}</div>
+      <div class="text-xs text-gray-400 mt-1">Encontrados</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-green-400">{{ task.articles_saved }}</div>
+      <div class="text-xs text-gray-400 mt-1">Guardados</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-blue-400">{{ stats.total_articles }}</div>
+      <div class="text-xs text-gray-400 mt-1">Total na BD</div>
+    </div>
+  </div>
+
+  {% if task.articles_found > 0 %}
+  {% set pct = ((task.articles_saved / task.articles_found) * 100) | int %}
+  <div>
+    <div class="flex justify-between text-xs text-gray-400 mb-1">
+      <span>Progresso desta sessão</span>
+      <span>{{ pct }}%</span>
+    </div>
+    <div class="w-full bg-gray-800 rounded-full h-1.5">
+      <div class="bg-pink-500 h-1.5 rounded-full transition-all" style="width:{{ pct }}%"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <span class="status-{{ task.status }}">{{ task.status }}</span>
+    {% if task.error %}<span class="text-red-400 text-xs">{{ task.error }}</span>{% endif %}
+    {% if task.started_at %}
+    <span class="text-gray-500 text-xs ml-auto">Início: {{ task.started_at[:19] }}</span>
+    {% endif %}
+  </div>
+</div>

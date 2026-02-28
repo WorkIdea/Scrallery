@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}HQ Crawler{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    .btn         { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer; }
+    .btn-primary { @apply btn bg-pink-600 hover:bg-pink-700 text-white; }
+    .btn-ghost   { @apply btn border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white; }
+    .btn-danger  { @apply btn bg-red-700 hover:bg-red-800 text-white; }
+    .btn-sm      { @apply px-3 py-1.5 text-xs; }
+    .badge       { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; }
+    .status-running { @apply badge bg-green-900 text-green-300; }
+    .status-idle    { @apply badge bg-gray-800 text-gray-400; }
+    .status-paused  { @apply badge bg-yellow-900 text-yellow-300; }
+    .status-done    { @apply badge bg-blue-900 text-blue-300; }
+    .status-error   { @apply badge bg-red-900 text-red-300; }
+    .input { @apply bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-500; }
+    .card  { @apply bg-gray-900 border border-gray-800 rounded-xl; }
+  </style>
+</head>
+<body class="h-full text-gray-100 font-sans antialiased">
+
+<nav class="fixed top-0 inset-x-0 z-50 bg-gray-950/90 backdrop-blur border-b border-gray-800">
+  <div class="max-w-screen-xl mx-auto px-4 h-14 flex items-center gap-3">
+    <a href="/" class="text-pink-500 font-bold text-lg shrink-0">⚡ HQ</a>
+    <div class="flex gap-1 ml-auto flex-wrap">
+      <a href="/library/hq"    class="btn btn-ghost btn-sm">📚 HQPorno</a>
+      <a href="/library/super" class="btn btn-ghost btn-sm">📚 SuperHQ</a>
+      <a href="/browse/hq"     class="btn btn-ghost btn-sm">🔍 Navegar HQ</a>
+      <a href="/browse/super"  class="btn btn-ghost btn-sm">🔍 Navegar Super</a>
+      <a href="/site/hq"       class="btn btn-ghost btn-sm">⚙ Crawler HQ</a>
+      <a href="/site/super"    class="btn btn-ghost btn-sm">⚙ Crawler Super</a>
+    </div>
+  </div>
+</nav>
+
+<main class="pt-14 min-h-screen">
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

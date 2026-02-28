@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Navegar — {{ cfg.label }}{% endblock %}
+{% block content %}
+<div class="flex h-[calc(100vh-3.5rem)]">
+
+  <!-- Sidebar -->
+  <aside class="w-64 shrink-0 bg-gray-900 border-r border-gray-800 overflow-y-auto p-4 space-y-6">
+
+    <div>
+      <a href="/" class="text-xs text-gray-500 hover:text-white">← Dashboard</a>
+      <h2 class="font-bold mt-2 text-brand-400">{{ cfg.label }}</h2>
+      <a href="/browse/{{ site_key }}" class="text-xs text-gray-400 hover:text-white">Página inicial</a>
+    </div>
+
+    {% if categories %}
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Categorias</h3>
+      <ul class="space-y-1">
+        {% for cat in categories %}
+        <li>
+          <a href="/browse/{{ site_key }}/navigate?url={{ cat.url | urlencode }}"
+             class="block text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded px-2 py-1 truncate
+                    {% if url == cat.url %}bg-gray-800 text-white{% endif %}">
+            {{ cat.name }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if tags %}
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Tags</h3>
+      <div class="flex flex-wrap gap-1">
+        {% for tag in tags[:60] %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ tag.url | urlencode }}"
+           class="badge bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white cursor-pointer text-xs px-2 py-0.5 rounded">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </aside>
+
+  <!-- Área principal -->
+  <div class="flex-1 overflow-y-auto">
+
+    <!-- Barra superior -->
+    <div class="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-3 flex items-center gap-3">
+      <span class="text-sm font-semibold text-gray-200">{{ page_label }}</span>
+      <span class="text-xs text-gray-500 truncate flex-1">{{ url }}</span>
+
+      <!-- Paginação -->
+      <div class="flex items-center gap-2 ml-auto shrink-0">
+        {% if prev_page %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ prev_page | urlencode }}" class="btn-ghost text-xs">← Anterior</a>
+        {% endif %}
+        {% if next_page %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ next_page | urlencode }}" class="btn-primary text-xs">Próxima →</a>
+        {% endif %}
+      </div>
+
+      <!-- Baixar todos visíveis -->
+      {% if articles %}
+      <button onclick="downloadAll()" class="btn-ghost text-xs shrink-0">⬇ Baixar todos</button>
+      {% endif %}
+    </div>
+
+    <!-- Erro -->
+    {% if error %}
+    <div class="m-6 card p-4 border-red-800 text-red-400 text-sm">{{ error }}</div>
+    {% endif %}
+
+    <!-- Grid de artigos -->
+    {% if articles %}
+    <div id="articles-grid" class="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {% for art in articles %}
+      <div class="card overflow-hidden flex flex-col group" data-id="{{ art.id }}">
+
+        <!-- Capa -->
+        <a href="/article/{{ site_key }}/{{ art.id }}" class="block aspect-[3/4] bg-gray-800 overflow-hidden">
+          {% if art.cover %}
+          <img src="{{ art.cover }}" alt="{{ art.title }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               loading="lazy" onerror="this.src='/static/no-cover.svg'"/>
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-600 text-4xl">📄</div>
+          {% endif %}
+        </a>
+
+        <!-- Info -->
+        <div class="p-3 flex flex-col gap-2 flex-1">
+          <a href="/article/{{ site_key }}/{{ art.id }}"
+             class="text-sm font-medium leading-tight line-clamp-2 hover:text-brand-400">
+            {{ art.title or "Sem título" }}
+          </a>
+
+          {% if art.summary %}
+          <p class="text-xs text-gray-400 line-clamp-2">{{ art.summary }}</p>
+          {% endif %}
+
+          <div class="flex items-center justify-between mt-auto pt-1">
+            {% if art.total_images > 0 %}
+            <span class="text-xs text-gray-500">🖼 {{ art.total_images }}</span>
+            {% endif %}
+            {% if art.downloaded %}
+            <span class="badge bg-green-900 text-green-400 text-xs">✓ baixado</span>
+            {% endif %}
+          </div>
+
+          <!-- Botões -->
+          <div class="flex gap-1 mt-1">
+            <a href="/article/{{ site_key }}/{{ art.id }}"
+               class="flex-1 text-center text-xs btn-ghost py-1">Ver</a>
+            <button onclick="downloadOne({{ art.id }}, this)"
+                    class="flex-1 text-xs btn-ghost py-1 {% if art.downloaded %}text-green-400{% endif %}">
+              {% if art.downloaded %}✓{% else %}⬇{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Paginação inferior -->
+    <div class="flex justify-center gap-4 pb-10">
+      {% if prev_page %}
+      <a href="/browse/{{ site_key }}/navigate?url={{ prev_page | urlencode }}" class="btn-ghost">← Anterior</a>
+      {% endif %}
+      {% if next_page %}
+      <a href="/browse/{{ site_key }}/navigate?url={{ next_page | urlencode }}" class="btn-primary">Próxima →</a>
+      {% endif %}
+    </div>
+
+    {% else %}
+    <div class="p-10 text-center text-gray-500">Nenhum artigo encontrado nesta página.</div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const siteKey = "{{ site_key }}";
+
+  async function downloadOne(articleId, btn) {
+    btn.textContent = "…";
+    btn.disabled = true;
+    const resp = await fetch(`/article/${siteKey}/${articleId}/download`, {method:"POST"});
+    const data = await resp.json();
+    btn.textContent = "✓";
+    btn.classList.add("text-green-400");
+  }
+
+  async function downloadAll() {
+    const cards = document.querySelectorAll("[data-id]");
+    const ids   = Array.from(cards).map(c => parseInt(c.dataset.id));
+    const resp  = await fetch(`/download/bulk/${siteKey}`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ids}),
+    });
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `${siteKey}_bulk.zip`; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}HQ Crawler{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        brand: { 50:"#fdf2f8", 500:"#ec4899", 600:"#db2777", 700:"#be185d" }
+      }}}
+    }
+  </script>
+  <style>
+    .card { @apply bg-gray-900 border border-gray-800 rounded-xl; }
+    .btn  { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all; }
+    .btn-primary { @apply btn bg-brand-600 hover:bg-brand-700 text-white; }
+    .btn-ghost   { @apply btn border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white; }
+    .btn-danger  { @apply btn bg-red-700 hover:bg-red-800 text-white; }
+    .badge { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; }
+    .badge-running { @apply badge bg-green-900 text-green-300; }
+    .badge-idle    { @apply badge bg-gray-800 text-gray-400; }
+    .badge-paused  { @apply badge bg-yellow-900 text-yellow-300; }
+    .badge-done    { @apply badge bg-blue-900 text-blue-300; }
+    .badge-error   { @apply badge bg-red-900 text-red-300; }
+  </style>
+</head>
+<body class="h-full text-gray-100 font-sans">
+
+<!-- Navbar -->
+<nav class="fixed top-0 inset-x-0 z-50 bg-gray-950/80 backdrop-blur border-b border-gray-800">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
+    <a href="/" class="text-brand-500 font-bold text-lg tracking-tight">⚡ HQ Crawler</a>
+    <div class="flex gap-2 ml-auto">
+      <a href="/browse/hq"    class="btn-ghost text-xs">Navegar HQPorno</a>
+      <a href="/browse/super" class="btn-ghost text-xs">Navegar SuperHQ</a>
+      <a href="/site/hq"      class="btn-ghost text-xs">Crawler HQ</a>
+      <a href="/site/super"   class="btn-ghost text-xs">Crawler Super</a>
+    </div>
+  </div>
+</nav>
+
+<main class="pt-14 min-h-screen">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+  // Rolar log ao vivo para o fim automaticamente
+  document.addEventListener("htmx:afterSwap", e => {
+    const log = document.getElementById("live-log");
+    if (log) log.scrollTop = log.scrollHeight;
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

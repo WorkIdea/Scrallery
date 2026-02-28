@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — HQ Crawler{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-bold mb-1">Dashboard</h1>
+  <p class="text-gray-400 mb-8">Estado geral e acesso rápido aos dois sites.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for s in sites %}
+    <div class="card p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold">{{ s.label }}</h2>
+        <span class="status-{{ s.status }}">{{ s.status }}</span>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3 text-center py-2">
+        <div>
+          <div class="text-2xl font-bold text-pink-400">{{ s.stats.total_articles }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">artigos</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-blue-400">{{ s.stats.total_tags }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">tags/séries</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-green-400">{{ s.stats.downloaded_arts }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">baixados</div>
+        </div>
+      </div>
+
+      <!-- Barra de progresso de downloads -->
+      {% if s.stats.total_images > 0 %}
+      <div>
+        <div class="flex justify-between text-xs text-gray-400 mb-1">
+          <span>Imagens baixadas</span>
+          <span>{{ s.stats.downloaded_imgs }}/{{ s.stats.total_images }} ({{ s.stats.pct_downloaded }}%)</span>
+        </div>
+        <div class="w-full bg-gray-800 rounded-full h-1.5">
+          <div class="bg-pink-500 h-1.5 rounded-full" style="width:{{ s.stats.pct_downloaded }}%"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <p class="text-xs text-gray-500 truncate">{{ s.base_url }}</p>
+
+      <div class="flex flex-wrap gap-2 mt-auto pt-3 border-t border-gray-800">
+        <a href="/library/{{ s.key }}"  class="btn btn-primary btn-sm">📚 Biblioteca</a>
+        <a href="/browse/{{ s.key }}"   class="btn btn-ghost btn-sm">🔍 Navegar</a>
+        <a href="/site/{{ s.key }}"     class="btn btn-ghost btn-sm">⚙ Crawler</a>
+        <a href="/download/json/{{ s.key }}" class="btn btn-ghost btn-sm">⬇ JSON</a>
+        <a href="/download/csv/{{ s.key }}"  class="btn btn-ghost btn-sm">⬇ CSV</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

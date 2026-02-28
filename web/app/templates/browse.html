@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Navegar — {{ cfg.label }}{% endblock %}
+{% block content %}
+<div class="flex h-[calc(100vh-3.5rem)]">
+
+  <!-- Sidebar -->
+  <aside class="w-56 shrink-0 bg-gray-900 border-r border-gray-800 overflow-y-auto flex flex-col">
+
+    <div class="p-3 border-b border-gray-800">
+      <a href="/" class="text-xs text-gray-500 hover:text-white">← Dashboard</a>
+      <h2 class="font-bold mt-1 text-pink-400">{{ cfg.label }}</h2>
+      <a href="/browse/{{ site_key }}" class="text-xs text-gray-400 hover:text-white block mt-0.5">↩ Página inicial</a>
+    </div>
+
+    <!-- Categorias ao vivo (extraídas da página actual) -->
+    {% if live_cats %}
+    <div class="p-3 border-b border-gray-800">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Categorias desta página</p>
+      <div class="space-y-0.5">
+        {% for cat in live_cats %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ cat.url | urlencode }}"
+           class="block text-xs text-gray-300 hover:text-white hover:bg-gray-800 rounded px-2 py-1 truncate
+                  {% if url == cat.url %}bg-gray-800 text-pink-400 font-medium{% endif %}">
+          {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tags ao vivo (extraídas da página actual) -->
+    {% if live_tags %}
+    <div class="p-3 border-b border-gray-800">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Tags desta página</p>
+      <div class="flex flex-wrap gap-1">
+        {% for tag in live_tags %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ tag.url | urlencode }}"
+           class="badge bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs cursor-pointer
+                  {% if url == tag.url %}bg-pink-900/60 text-pink-300{% endif %}">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Categorias da BD (histórico de visitas) -->
+    {% if db_cats %}
+    <div class="p-3 border-b border-gray-800">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Todas as categorias</p>
+      <div class="space-y-0.5">
+        {% for cat in db_cats %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ cat.url | urlencode }}"
+           class="block text-xs text-gray-400 hover:text-white hover:bg-gray-800 rounded px-2 py-1 truncate
+                  {% if url == cat.url %}bg-gray-800 text-pink-400 font-medium{% endif %}">
+          {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tags da BD -->
+    {% if db_tags %}
+    <div class="p-3">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Todas as tags</p>
+      <div class="flex flex-wrap gap-1">
+        {% for tag in db_tags %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ tag.url | urlencode }}"
+           class="badge bg-gray-800/60 hover:bg-gray-700 text-gray-400 hover:text-white text-xs cursor-pointer">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not live_cats and not live_tags and not db_cats and not db_tags %}
+    <div class="p-4 text-xs text-gray-500">
+      Navega para uma página para ver as categorias e tags disponíveis.
+    </div>
+    {% endif %}
+
+  </aside>
+
+  <!-- Área principal -->
+  <div class="flex-1 overflow-y-auto flex flex-col">
+
+    <!-- Barra de navegação -->
+    <div class="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-4 py-2.5 flex items-center gap-2">
+
+      <!-- Barra de URL — o utilizador pode navegar para qualquer página -->
+      <form method="get" action="/browse/{{ site_key }}/navigate" class="flex-1 flex gap-2">
+        <input name="url" value="{{ url }}"
+               class="input flex-1 text-xs font-mono"
+               placeholder="https://..."/>
+        <button type="submit" class="btn btn-primary btn-sm shrink-0">Ir</button>
+      </form>
+
+      <!-- Paginação -->
+      <div class="flex gap-1 shrink-0">
+        {% if prev_page %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ prev_page | urlencode }}"
+           class="btn btn-ghost btn-sm">← Ant.</a>
+        {% endif %}
+        {% if next_page %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ next_page | urlencode }}"
+           class="btn btn-primary btn-sm">Próx. →</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Label da página actual -->
+    <div class="px-4 pt-3 pb-1 flex items-center gap-2">
+      <span class="text-sm font-semibold">{{ page_label }}</span>
+      {% if articles %}
+      <span class="text-xs text-gray-500">— {{ articles | length }} artigos nesta página</span>
+      {% endif %}
+    </div>
+
+    {% if error %}
+    <div class="mx-4 my-3 card p-4 border-red-800/50 bg-red-900/20 text-red-400 text-sm">
+      ⚠ {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Grid de artigos -->
+    {% if articles %}
+    <div id="articles-grid"
+         class="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 flex-1">
+      {% for art in articles %}
+      <div class="card overflow-hidden flex flex-col group" data-id="{{ art.id or '' }}">
+
+        <!-- Capa -->
+        <a href="{% if art.id %}/article/{{ site_key }}/{{ art.id }}{% else %}{{ art.url }}{% endif %}"
+           class="block aspect-[3/4] bg-gray-800 overflow-hidden relative">
+          {% if art.cover %}
+          <img src="{{ art.cover }}" alt="{{ art.title }}" loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-3xl text-gray-600\'>📄</div>'"/>
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-3xl text-gray-600">📄</div>
+          {% endif %}
+          {% if art.downloaded %}
+          <span class="absolute top-2 right-2 badge bg-green-900/80 text-green-300">✓</span>
+          {% endif %}
+        </a>
+
+        <!-- Info -->
+        <div class="p-2.5 flex flex-col gap-1.5 flex-1">
+          <a href="{% if art.id %}/article/{{ site_key }}/{{ art.id }}{% else %}{{ art.url }}{% endif %}"
+             class="text-xs font-medium leading-tight line-clamp-2 hover:text-pink-400">
+            {{ art.title or "Sem título" }}
+          </a>
+          <div class="flex items-center justify-between mt-auto pt-1">
+            {% if art.total_images > 0 %}
+            <span class="text-xs text-gray-500">🖼 {{ art.total_images }}</span>
+            {% else %}
+            <span></span>
+            {% endif %}
+            {% if art.id %}
+            <button onclick="downloadOne({{ art.id }}, this)"
+                    class="text-xs text-gray-400 hover:text-white transition-colors
+                           {% if art.downloaded %}text-green-400{% endif %}">
+              {% if art.downloaded %}✓{% else %}⬇{% endif %}
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Paginação inferior -->
+    <div class="flex justify-center gap-4 py-6 border-t border-gray-800">
+      {% if prev_page %}
+      <a href="/browse/{{ site_key }}/navigate?url={{ prev_page | urlencode }}"
+         class="btn btn-ghost">← Anterior</a>
+      {% endif %}
+      {% if next_page %}
+      <a href="/browse/{{ site_key }}/navigate?url={{ next_page | urlencode }}"
+         class="btn btn-primary">Próxima página →</a>
+      {% endif %}
+    </div>
+
+    {% else %}
+    <div class="flex-1 flex flex-col items-center justify-center text-gray-500 gap-2">
+      <div class="text-4xl">📭</div>
+      <p class="text-sm">Nenhum artigo encontrado nesta página.</p>
+      <p class="text-xs text-gray-600">Tenta navegar para uma categoria ou tag na sidebar.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const siteKey = "{{ site_key }}";
+
+  async function downloadOne(id, btn) {
+    if (!id) return;
+    btn.textContent = "…"; btn.disabled = true;
+    try {
+      await fetch(`/article/${siteKey}/${id}/download`, {method: "POST"});
+      btn.textContent = "✓";
+      btn.classList.add("text-green-400");
+    } catch(e) {
+      btn.textContent = "⬇"; btn.disabled = false;
+    }
+  }
+</script>
+{% endblock %}

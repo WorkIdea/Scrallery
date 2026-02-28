@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Biblioteca — {{ cfg.label }}{% endblock %}
+{% block content %}
+<div class="flex h-[calc(100vh-3.5rem)]">
+
+  <!-- Sidebar de filtros -->
+  <aside class="w-56 shrink-0 bg-gray-900 border-r border-gray-800 overflow-y-auto flex flex-col">
+    <div class="p-4 border-b border-gray-800">
+      <a href="/" class="text-xs text-gray-500 hover:text-white">← Dashboard</a>
+      <h2 class="font-bold mt-1 text-pink-400">{{ cfg.label }}</h2>
+      <p class="text-xs text-gray-500 mt-0.5">{{ total }} artigos</p>
+    </div>
+
+    <!-- Pesquisa -->
+    <form method="get" class="p-3 border-b border-gray-800">
+      <input name="q" value="{{ search }}" placeholder="Pesquisar…"
+             class="input w-full text-xs"/>
+      <!-- Preserva outros filtros -->
+      {% if sort != "recent" %}<input type="hidden" name="sort" value="{{ sort }}"/>{% endif %}
+      {% if downloaded_only %}<input type="hidden" name="downloaded" value="1"/>{% endif %}
+    </form>
+
+    <!-- Ordenação -->
+    <div class="p-3 border-b border-gray-800">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Ordenar por</p>
+      <div class="space-y-1">
+        {% for s_key, s_label in [("recent","Mais recentes"),("oldest","Mais antigos"),("images","Mais imagens"),("title","Título A-Z")] %}
+        <a href="?q={{ search }}&sort={{ s_key }}{% if downloaded_only %}&downloaded=1{% endif %}{% if tag_id %}&tag_id={{ tag_id }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}"
+           class="block text-xs px-2 py-1 rounded hover:bg-gray-800
+                  {% if sort == s_key %}bg-gray-800 text-pink-400 font-medium{% else %}text-gray-400{% endif %}">
+          {{ s_label }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Filtro downloaded -->
+    <div class="p-3 border-b border-gray-800">
+      <a href="?q={{ search }}&sort={{ sort }}&downloaded={{ '0' if downloaded_only else '1' }}{% if tag_id %}&tag_id={{ tag_id }}{% endif %}"
+         class="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-gray-800
+                {% if downloaded_only %}bg-gray-800 text-green-400{% else %}text-gray-400{% endif %}">
+        <span>{% if downloaded_only %}✓{% else %}○{% endif %}</span> Só baixados
+      </a>
+    </div>
+
+    <!-- Categorias -->
+    {% if categories %}
+    <div class="p-3 border-b border-gray-800">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Categorias</p>
+      <div class="space-y-0.5">
+        {% for cat in categories %}
+        <a href="?q={{ search }}&sort={{ sort }}&category_id={{ cat.id }}{% if downloaded_only %}&downloaded=1{% endif %}"
+           class="block text-xs px-2 py-1 rounded truncate hover:bg-gray-800
+                  {% if category_id == cat.id %}bg-gray-800 text-pink-400 font-medium{% else %}text-gray-400{% endif %}">
+          {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tags / Séries -->
+    {% if tags %}
+    <div class="p-3">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Tags / Séries</p>
+      <div class="flex flex-wrap gap-1">
+        {% for tag in tags %}
+        <a href="?q={{ search }}&sort={{ sort }}&tag_id={{ tag.id }}{% if downloaded_only %}&downloaded=1{% endif %}"
+           class="badge text-xs cursor-pointer hover:opacity-80
+                  {% if tag_id == tag.id %}bg-pink-700 text-white{% else %}bg-gray-800 text-gray-300{% endif %}">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </aside>
+
+  <!-- Área principal -->
+  <div class="flex-1 overflow-y-auto">
+
+    <!-- Barra topo -->
+    <div class="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-5 py-3 flex items-center gap-3">
+      <span class="text-sm font-medium">
+        {% if search %}Resultados para "{{ search }}"{% elif tag_id %}Tag seleccionada{% elif category_id %}Categoria seleccionada{% else %}Todos os artigos{% endif %}
+      </span>
+      <span class="text-xs text-gray-500">{{ total }} encontrados</span>
+      {% if search or tag_id or category_id or downloaded_only %}
+      <a href="/library/{{ site_key }}" class="text-xs text-pink-400 hover:text-pink-300 ml-1">✕ Limpar filtros</a>
+      {% endif %}
+      <div class="ml-auto flex gap-2">
+        <button onclick="downloadAll()" class="btn btn-ghost btn-sm">⬇ Baixar todos</button>
+      </div>
+    </div>
+
+    {% if articles %}
+    <div id="articles-grid" class="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+      {% for art in articles %}
+      <div class="card overflow-hidden flex flex-col group" data-id="{{ art.id }}">
+        <a href="/article/{{ site_key }}/{{ art.id }}" class="block aspect-[3/4] bg-gray-800 overflow-hidden relative">
+          {% if art.cover %}
+          <img src="{{ art.cover }}" alt="{{ art.title }}" loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-3xl text-gray-600\'>📄</div>'"/>
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-3xl text-gray-600">📄</div>
+          {% endif %}
+          {% if art.downloaded %}
+          <span class="absolute top-2 right-2 badge bg-green-900/80 text-green-300">✓</span>
+          {% endif %}
+        </a>
+        <div class="p-2.5 flex flex-col gap-1.5 flex-1">
+          <a href="/article/{{ site_key }}/{{ art.id }}"
+             class="text-xs font-medium leading-tight line-clamp-2 hover:text-pink-400">
+            {{ art.title or "Sem título" }}
+          </a>
+          <div class="flex items-center justify-between mt-auto pt-1">
+            <span class="text-xs text-gray-500">🖼 {{ art.total_images }}</span>
+            <button onclick="downloadOne({{ art.id }}, this)"
+                    class="text-xs text-gray-400 hover:text-white {% if art.downloaded %}text-green-400{% endif %}">
+              {% if art.downloaded %}✓{% else %}⬇{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Paginação -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-center items-center gap-2 py-8">
+      {% if page > 1 %}
+      <a href="?q={{ search }}&sort={{ sort }}&page={{ page-1 }}{% if tag_id %}&tag_id={{ tag_id }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}{% if downloaded_only %}&downloaded=1{% endif %}"
+         class="btn btn-ghost btn-sm">← Anterior</a>
+      {% endif %}
+      <span class="text-sm text-gray-400">{{ page }} / {{ total_pages }}</span>
+      {% if page < total_pages %}
+      <a href="?q={{ search }}&sort={{ sort }}&page={{ page+1 }}{% if tag_id %}&tag_id={{ tag_id }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}{% if downloaded_only %}&downloaded=1{% endif %}"
+         class="btn btn-primary btn-sm">Próxima →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="flex flex-col items-center justify-center h-64 text-gray-500">
+      <div class="text-4xl mb-3">📭</div>
+      <p>Nenhum artigo encontrado.</p>
+      {% if search or tag_id or category_id %}
+      <a href="/library/{{ site_key }}" class="text-pink-400 hover:text-pink-300 text-sm mt-2">Limpar filtros</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const siteKey = "{{ site_key }}";
+
+  async function downloadOne(id, btn) {
+    btn.textContent = "…"; btn.disabled = true;
+    await fetch(`/article/${siteKey}/${id}/download`, {method: "POST"});
+    btn.textContent = "✓"; btn.classList.add("text-green-400");
+  }
+
+  async function downloadAll() {
+    const ids = Array.from(document.querySelectorAll("[data-id]")).map(c => +c.dataset.id);
+    const resp = await fetch(`/download/bulk/${siteKey}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ids}),
+    });
+    const blob = await resp.blob();
+    const a = Object.assign(document.createElement("a"),
+      {href: URL.createObjectURL(blob), download: `${siteKey}_bulk.zip`});
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+</script>
+{% endblock %}

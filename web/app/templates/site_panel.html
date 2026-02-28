@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Crawler — {{ cfg.label }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+
+  <div class="flex items-center gap-3 mb-8 flex-wrap">
+    <a href="/" class="text-gray-500 hover:text-white text-sm">← Dashboard</a>
+    <h1 class="text-2xl font-bold">Crawler — {{ cfg.label }}</h1>
+    <span class="status-{{ task.status }}">{{ task.status }}</span>
+  </div>
+
+  <!-- Stats rápidas -->
+  {% if stats %}
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="card p-4 text-center">
+      <div class="text-2xl font-bold text-pink-400">{{ stats.total_articles }}</div>
+      <div class="text-xs text-gray-400 mt-1">Artigos na BD</div>
+    </div>
+    <div class="card p-4 text-center">
+      <div class="text-2xl font-bold text-blue-400">{{ stats.total_tags }}</div>
+      <div class="text-xs text-gray-400 mt-1">Tags / Séries</div>
+    </div>
+    <div class="card p-4 text-center">
+      <div class="text-2xl font-bold text-green-400">{{ stats.pct_downloaded }}%</div>
+      <div class="text-xs text-gray-400 mt-1">Imagens baixadas</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Controles -->
+  <div class="card p-6 mb-6">
+    <h2 class="font-semibold mb-4 text-gray-300">Configuração</h2>
+    <div class="flex flex-wrap items-end gap-4 mb-5">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Máx. páginas (0 = sem limite)</label>
+        <input id="max-pages" type="number" value="0" min="0" class="input w-32"/>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button onclick="crawlAction('start')"  class="btn btn-primary">▶ Iniciar</button>
+      <button onclick="crawlAction('pause')"  class="btn btn-ghost">⏸ Pausar</button>
+      <button onclick="crawlAction('resume')" class="btn btn-ghost">▶ Retomar</button>
+      <button onclick="crawlAction('stop')"   class="btn btn-danger">■ Parar</button>
+    </div>
+  </div>
+
+  <!-- Status com polling HTMX -->
+  <div id="crawl-status"
+       hx-get="/site/{{ site_key }}/crawl/status"
+       hx-trigger="{% if task.running %}every 3s{% else %}none{% endif %}"
+       hx-swap="outerHTML">
+    {% include "partials/crawl_status.html" %}
+  </div>
+
+  <div class="flex gap-3 mt-6">
+    <a href="/library/{{ site_key }}" class="btn btn-ghost">📚 Ver biblioteca</a>
+    <a href="/download/json/{{ site_key }}" class="btn btn-ghost btn-sm">⬇ JSON</a>
+    <a href="/download/csv/{{ site_key }}"  class="btn btn-ghost btn-sm">⬇ CSV</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const key = "{{ site_key }}";
+  async function crawlAction(action) {
+    const maxPages = document.getElementById("max-pages").value;
+    const body = new FormData();
+    body.append("max_pages", maxPages);
+    await fetch(`/site/${key}/crawl/${action}`, {method: "POST", body});
+    htmx.trigger("#crawl-status", "htmx:load");
+  }
+</script>
+{% endblock %}

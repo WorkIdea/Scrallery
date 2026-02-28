@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — HQ Crawler{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+
+  <!-- Breadcrumb -->
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+    <a href="/" class="hover:text-white">Dashboard</a>
+    <span>/</span>
+    <a href="/browse/{{ site_key }}" class="hover:text-white">{{ cfg.label }}</a>
+    <span>/</span>
+    <span class="text-gray-300 truncate">{{ article.title }}</span>
+  </div>
+
+  <!-- Header do artigo -->
+  <div class="flex gap-6 mb-8">
+
+    <!-- Capa -->
+    {% if cover_src %}
+    <div class="shrink-0 w-40 md:w-56">
+      <img src="{{ cover_src }}" alt="{{ article.title }}"
+           class="w-full rounded-xl object-cover shadow-lg"
+           onerror="this.style.display='none'"/>
+    </div>
+    {% endif %}
+
+    <!-- Metadados -->
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl md:text-3xl font-bold mb-3">{{ article.title }}</h1>
+
+      {% if article.summary %}
+      <p class="text-gray-300 leading-relaxed mb-4">{{ article.summary }}</p>
+      {% endif %}
+
+      <!-- Categorias -->
+      {% if article.categories %}
+      <div class="flex flex-wrap gap-2 mb-2">
+        {% for cat in article.categories %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ cat.url | urlencode }}"
+           class="badge bg-brand-700/30 text-brand-300 hover:bg-brand-700/60 cursor-pointer">
+          {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Tags -->
+      {% if article.tags %}
+      <div class="flex flex-wrap gap-1 mb-4">
+        {% for tag in article.tags %}
+        <a href="/browse/{{ site_key }}/navigate?url={{ tag.url | urlencode }}"
+           class="badge bg-gray-800 hover:bg-gray-700 text-gray-300 cursor-pointer">
+          # {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Stats e acções -->
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm text-gray-400">🖼 {{ article.total_images }} imagens</span>
+
+        {% if downloaded %}
+        <span class="badge bg-green-900 text-green-300">✓ Baixado</span>
+        {% elif pending_count > 0 %}
+        <span class="text-sm text-yellow-400">{{ pending_count }} pendentes</span>
+        {% endif %}
+
+        <button id="dl-btn" onclick="downloadImages()" class="btn-primary ml-auto">
+          {% if downloaded %}✓ Baixado{% else %}⬇ Baixar todas as imagens{% endif %}
+        </button>
+        <a href="/download/article/{{ article.id }}/zip?key={{ site_key }}" class="btn-ghost">
+          📦 ZIP
+        </a>
+        <a href="{{ article.url }}" target="_blank" rel="noopener" class="btn-ghost text-xs">
+          🔗 Original
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Galeria -->
+  {% if images %}
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="text-lg font-semibold">Imagens ({{ images | length }})</h2>
+    <div class="flex gap-2">
+      <button onclick="setColumns(2)" class="btn-ghost text-xs px-2">2</button>
+      <button onclick="setColumns(3)" class="btn-ghost text-xs px-2">3</button>
+      <button onclick="setColumns(4)" class="btn-ghost text-xs px-2">4</button>
+      <button onclick="setColumns(6)" class="btn-ghost text-xs px-2">6</button>
+    </div>
+  </div>
+
+  <div id="gallery" class="grid grid-cols-3 gap-2">
+    {% for img in images %}
+    <div class="relative group bg-gray-900 rounded-lg overflow-hidden aspect-[3/4] cursor-pointer"
+         onclick="openLightbox({{ loop.index0 }})">
+      <img src="{{ img.src }}" alt="{{ img.filename }}"
+           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+           loading="lazy"/>
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"/>
+      {% if img.downloaded %}
+      <span class="absolute top-1 right-1 badge bg-green-900/80 text-green-300 text-xs">✓</span>
+      {% endif %}
+      <span class="absolute bottom-1 left-1 text-xs text-white/50 font-mono">{{ img.filename }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-10 text-gray-500">
+    As imagens serão carregadas ao clicar em "Baixar todas as imagens".
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+     onclick="closeLightbox()">
+  <button class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 z-10"
+          onclick="closeLightbox()">✕</button>
+  <button class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10 px-4"
+          onclick="prevImg(event)">‹</button>
+  <button class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10 px-4"
+          onclick="nextImg(event)">›</button>
+  <img id="lightbox-img" src="" class="max-h-full max-w-full object-contain rounded-lg"
+       onclick="event.stopPropagation()"/>
+  <div id="lightbox-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const siteKey = "{{ site_key }}";
+  const articleId = {{ article.id }};
+  const images = [{% for img in images %}"{{ img.src }}"{% if not loop.last %},{% endif %}{% endfor %}];
+  let currentIdx = 0;
+
+  async function downloadImages() {
+    const btn = document.getElementById("dl-btn");
+    btn.textContent = "⏳ Baixando…";
+    btn.disabled = true;
+    const resp = await fetch(`/article/${siteKey}/${articleId}/download`, {method:"POST"});
+    const data = await resp.json();
+    btn.textContent = `✓ ${data.ok} baixadas`;
+    btn.classList.remove("btn-primary");
+    btn.classList.add("btn-ghost");
+  }
+
+  function setColumns(n) {
+    const g = document.getElementById("gallery");
+    g.className = `grid grid-cols-${n} gap-2`;
+  }
+
+  function openLightbox(idx) {
+    currentIdx = idx;
+    document.getElementById("lightbox").classList.remove("hidden");
+    updateLightbox();
+    document.addEventListener("keydown", handleKey);
+  }
+
+  function closeLightbox() {
+    document.getElementById("lightbox").classList.add("hidden");
+    document.removeEventListener("keydown", handleKey);
+  }
+
+  function updateLightbox() {
+    document.getElementById("lightbox-img").src = images[currentIdx];
+    document.getElementById("lightbox-counter").textContent = `${currentIdx+1} / ${images.length}`;
+  }
+
+  function prevImg(e) { e.stopPropagation(); currentIdx = (currentIdx - 1 + images.length) % images.length; updateLightbox(); }
+  function nextImg(e) { e.stopPropagation(); currentIdx = (currentIdx + 1) % images.length; updateLightbox(); }
+
+  function handleKey(e) {
+    if (e.key === "ArrowLeft")  prevImg(e);
+    if (e.key === "ArrowRight") nextImg(e);
+    if (e.key === "Escape")     closeLightbox();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — HQ Crawler{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+
+  <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
+  <p class="text-gray-400 mb-10">Gerencie o crawling e a navegação dos dois sites.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for s in sites %}
+    <div class="card p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold">{{ s.label }}</h2>
+        <span class="badge-{{ s.status }}">{{ s.status }}</span>
+      </div>
+
+      <div class="text-sm text-gray-400">
+        <span class="text-white font-semibold text-2xl">{{ s.articles }}</span>
+        artigos na base de dados
+      </div>
+
+      <p class="text-xs text-gray-500">{{ s.base_url }}</p>
+
+      <div class="flex flex-wrap gap-2 mt-auto pt-2 border-t border-gray-800">
+        <a href="/browse/{{ s.key }}" class="btn-primary text-xs">
+          🔍 Navegar
+        </a>
+        <a href="/site/{{ s.key }}" class="btn-ghost text-xs">
+          ⚙ Crawler Completo
+        </a>
+        <a href="/download/json/{{ s.key }}" class="btn-ghost text-xs">
+          ⬇ JSON
+        </a>
+        <a href="/download/csv/{{ s.key }}" class="btn-ghost text-xs">
+          ⬇ CSV
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

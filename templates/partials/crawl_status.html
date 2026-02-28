@@ -1,0 +1,59 @@
+<div id="crawl-status"
+     hx-get="/site/{{ site_key }}/crawl/status"
+     hx-trigger="{% if task.status == 'running' %}every 2s{% else %}none{% endif %}"
+     hx-swap="outerHTML"
+     class="space-y-4">
+
+  <!-- Contadores -->
+  <div class="card p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+    <div>
+      <div class="text-2xl font-bold text-brand-500">{{ task.progress.get("visited_listings", 0) }}</div>
+      <div class="text-xs text-gray-400 mt-1">Páginas visitadas</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-green-400">{{ articles }}</div>
+      <div class="text-xs text-gray-400 mt-1">Artigos na BD</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-yellow-400">{{ task.progress.get("pending_articles", 0) }}</div>
+      <div class="text-xs text-gray-400 mt-1">Artigos pendentes</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-gray-400">{{ task.progress.get("pending_listings", 0) }}</div>
+      <div class="text-xs text-gray-400 mt-1">Listagens pendentes</div>
+    </div>
+  </div>
+
+  <!-- URL actual -->
+  {% if task.progress.get("current_url") %}
+  <div class="card px-4 py-3 text-sm text-gray-300 truncate">
+    <span class="text-gray-500 mr-2">
+      {% if task.progress.get("stage") == "listing" %}🔍{% else %}📄{% endif %}
+    </span>
+    {{ task.progress.get("current_url", "") }}
+  </div>
+  {% endif %}
+
+  <!-- Barra de progresso -->
+  {% set total = (task.progress.get("visited_articles", 0) + task.progress.get("pending_articles", 0)) %}
+  {% if total > 0 %}
+  {% set pct = ((task.progress.get("visited_articles", 0) / total) * 100) | int %}
+  <div class="w-full bg-gray-800 rounded-full h-2">
+    <div class="bg-brand-500 h-2 rounded-full transition-all duration-500" style="width: {{ pct }}%"></div>
+  </div>
+  <div class="text-xs text-gray-400 text-right">{{ pct }}% dos artigos processados</div>
+  {% endif %}
+
+  <!-- Estado -->
+  <div class="flex items-center gap-2">
+    <span class="badge-{{ task.status }}">{{ task.status }}</span>
+    {% if task.error %}
+    <span class="text-red-400 text-sm">{{ task.error }}</span>
+    {% endif %}
+    {% if task.ended_at %}
+    <span class="text-gray-500 text-xs ml-auto">
+      Concluído em {{ task.ended_at.strftime("%H:%M:%S") }}
+    </span>
+    {% endif %}
+  </div>
+</div>
